@@ -1,8 +1,9 @@
 import numpy as np
 import torch
-import torch.nn.functional as F
+import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
+from torchsummary import summary
 if torch.cuda.is_available():
     from tqdm import tqdm_notebook as tqdm
 else:
@@ -11,8 +12,8 @@ else:
 import util
 from util import AverageMeter
 from dataset import load_data
-from models import BasicCNN
-from test import test_model
+from models import ResNet18
+from test import test_model, validate_model
 from viz import visualize
 
 
@@ -20,34 +21,42 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
     model.train()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
+    # summary(model, (1, 64, 64))
 
-    train_loss, running_loss = 0.0, 0.0
+    running_acc, running_loss = 0.0, 0.0
     with tqdm(desc='Batch', total=len(train_loader), ncols=120, position=1, leave=True) as pbar:
-        for i, (data, target) in enumerate(train_loader):
-            data, target = data.to(device), target.to(device)
+        for i, (data, labels1, labels2, labels3) in enumerate(train_loader):
+            data = data.to(device).unsqueeze(1).float()
+            labels1 = labels1.to(device)
+            labels2 = labels2.to(device)
+            labels3 = labels3.to(device)
             optimizer.zero_grad()
 
             if args.visualize:
-                visualize(data, target)
+                visualize(data, labels1)
 
-            output = model(data)
-            loss = criterion(output, target)
-            loss.backward()
+            outputs1, outputs2, outputs3 = model(data)
+            loss1 = criterion(outputs1, labels1)
+            loss2 = criterion(outputs2, labels2)
+            loss3 = criterion(outputs3, labels3)
+            running_loss += loss1.item() + loss2.item() + loss3.item()
+            running_acc += (outputs1.argmax(1) == labels1).float().mean()
+            running_acc += (outputs2.argmax(1) == labels2).float().mean()
+            running_acc += (outputs3.argmax(1) == labels3).float().mean()
+            (loss1 + loss2 + loss3).backward()
             optimizer.step()
 
-            train_loss += loss.item()
-            running_loss += loss.item()
             num_steps = epoch * len(train_loader) + i
 
-            if i % args.log_interval == 0:
-                writer.add_scalar('training loss', running_loss / args.log_interval, num_steps)
-                running_loss = 0.0
+            # if i % args.log_interval == 0:
+            #     writer.add_scalar('training loss', running_loss / args.log_interval, num_steps)
+            #     running_loss = 0.0
 
-            # pbar.set_postfix({'Loss': loss_meter.avg, 'Accuracy': acc_meter.avg})
-            pbar.set_postfix({'Loss': f'{loss.item():.5f}', 'Accuracy': 0})
+            pbar.set_postfix({'Accuracy': f'{running_acc / (len(train_loader)*3):.5f}',
+                              'Loss': running_loss / len(train_loader)})
             pbar.update()
 
-    return train_loss
+    return 0
 
 
 def main():
@@ -55,9 +64,9 @@ def main():
     util.set_seed()
 
     ###
-    model = BasicCNN()
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
-    criterion = F.nll_loss
+    model = ResNet18()
+    optimizer = optim.Adam(model.parameters(), lr=4e-4)
+    criterion = nn.CrossEntropyLoss()
     ###
 
     start_epoch = 1
@@ -70,10 +79,10 @@ def main():
     train_loader, val_loader, _ = load_data(args)
 
     best_loss = np.inf
-    with tqdm(desc='Epoch', total=args.epochs + 1, ncols=120, position=0, leave=True) as pbar:
+    with tqdm(desc='Epoch', total=args.epochs + 1 - start_epoch, ncols=120, position=0, leave=True) as pbar:
         for epoch in range(start_epoch, args.epochs + 1):
             train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
-            val_loss = test_model(args, model, criterion, val_loader)
+            val_loss = validate_model(args, model, criterion, val_loader)
 
             is_best = val_loss < best_loss
             best_loss = min(val_loss, best_loss)

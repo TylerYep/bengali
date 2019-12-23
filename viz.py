@@ -22,7 +22,7 @@ def visualize(data, target):
 
 
 def main():
-    train_loader, _, _ = load_data()
+    train_loader, _, _ = load_data({})
     for i, (data, target) in enumerate(train_loader):
         visualize(data, target.float())
 
