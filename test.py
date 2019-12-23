@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-if torch.cuda.is_available():
-    from tqdm import tqdm_notebook as tqdm
-else:
-    from tqdm import tqdm
+# if torch.cuda.is_available():
+#     from tqdm import tqdm_notebook as tqdm
+# else:
+from tqdm import tqdm
 
 import util
 from dataset import load_data
@@ -57,7 +57,7 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
                 pbar.set_postfix({'Accuracy': f'{running_acc / (len(val_loader)*3):.5f}',
                                 'Loss': running_loss / len(val_loader)})
                 pbar.update()
-                
+
     return running_loss
 
 
