@@ -6,8 +6,6 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 if torch.cuda.is_available():
     from tqdm import tqdm_notebook as tqdm
-    # import sys
-    # sys.path.append('/content/bengali/')
 else:
     from tqdm import tqdm
 

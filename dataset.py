@@ -5,11 +5,9 @@ from torch.utils.data.dataset import Dataset
 from torchvision import datasets, transforms
 import pandas as pd
 if torch.cuda.is_available():
-    from tqdm import tqdm_notebook as tqdm
-    DATA_PATH = '/content/'
+    DATA_PATH = '../gdrive/My Drive/Colab Notebooks/data'
 else:
-    from tqdm import tqdm
-    DATA_PATH = 'data/'
+    DATA_PATH = 'data'
 
 INPUT_SIZE = 64
 
