@@ -24,6 +24,7 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
     # summary(model, (1, 64, 64))
 
     running_acc, running_loss = 0.0, 0.0
+    acc, loss = 0.0, 0.0
     with tqdm(desc='Batch', total=len(train_loader), ncols=120, position=1, leave=True) as pbar:
         for i, (data, labels1, labels2, labels3) in enumerate(train_loader):
             data = data.to(device).unsqueeze(1).float()
@@ -39,18 +40,31 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
             loss1 = criterion(outputs1, labels1)
             loss2 = criterion(outputs2, labels2)
             loss3 = criterion(outputs3, labels3)
-            running_loss += loss1.item() + loss2.item() + loss3.item()
-            running_acc += (outputs1.argmax(1) == labels1).float().mean()
-            running_acc += (outputs2.argmax(1) == labels2).float().mean()
-            running_acc += (outputs3.argmax(1) == labels3).float().mean()
+
+            total_loss = loss1.item() + loss2.item() + loss3.item()
+            output1_diff = (outputs1.argmax(1) == labels1).float().mean()
+            output2_diff = (outputs2.argmax(1) == labels2).float().mean()
+            output3_diff = (outputs3.argmax(1) == labels3).float().mean()
+
+            running_loss += total_loss
+            running_acc += output1_diff
+            running_acc += output2_diff
+            running_acc += output3_diff
+
+            loss += total_loss
+            acc += output1_diff
+            acc += output2_diff
+            acc += output3_diff
+
             (loss1 + loss2 + loss3).backward()
             optimizer.step()
 
-            num_steps = epoch * len(train_loader) + i
+            num_steps = (epoch-1) * len(train_loader) + i
 
-            # if i % args.log_interval == 0:
-            #     writer.add_scalar('training loss', running_loss / args.log_interval, num_steps)
-            #     running_loss = 0.0
+            if i % args.log_interval == 0:
+                writer.add_scalar('training loss', loss / args.log_interval, num_steps)
+                writer.add_scalar('training accuracy', acc / args.log_interval, num_steps)
+                acc, loss = 0.0, 0.0
 
             pbar.set_postfix({'Accuracy': f'{running_acc / (len(train_loader)*3):.5f}',
                               'Loss': running_loss / len(train_loader)})
@@ -87,6 +101,7 @@ def main():
             is_best = val_loss < best_loss
             best_loss = min(val_loss, best_loss)
 
+            print(f"Saving model at Epoch {epoch}")
             util.save_checkpoint({
                 'state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),

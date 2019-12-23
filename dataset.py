@@ -11,16 +11,11 @@ else:
 
 INPUT_SIZE = 64
 
-class_map = pd.read_csv("data/class_map.csv")
-sample_submission = pd.read_csv("data/sample_submission.csv")
-test = pd.read_csv("data/test.csv")
-train = pd.read_csv("data/train.csv")
-
 
 def load_data(args):
     # norm = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
     train_set = BengaliDataset("data/train.csv")
-    val_set = BengaliDataset("data/dev.csv", val=True)
+    val_set = BengaliDataset("data/dev.csv")
     test_set = BengaliTestDataset("data/test.csv")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=args.batch_size)
@@ -31,23 +26,24 @@ def load_data(args):
 class BengaliDataset(Dataset):
     """ Dataset for training a model on a dataset. """
 
-    def __init__(self, data_path, val=False, transform=None):
+    def __init__(self, data_path, transform=None):
         super().__init__()
         col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
-        train = pd.read_csv(data_path)
+        label = pd.read_csv(data_path)
         data_full = pd.read_feather('data/train_data_0.feather')
         # data1 = pd.read_feather('data/train_data_1.feather')
         # data2 = pd.read_feather('data/train_data_2.feather')
         # data3 = pd.read_feather('data/train_data_3.feather')
         # data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
 
-        reduced_index = train.groupby(['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']) \
-                             .apply(lambda x: x.sample(5)).image_id.values
-        reduced_train = train.loc[train.image_id.isin(reduced_index)]
-        reduced_data = data_full.loc[data_full.image_id.isin(reduced_index)]
+        # TODO full dataset - remove reductions and add all data
+        reduced_index = label.groupby(['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']) \
+                             .apply(lambda x: x.sample(10)).image_id.values
+        label = label.loc[label.image_id.isin(reduced_index)]
+        data_full = data_full.loc[data_full.image_id.isin(reduced_index)]
 
-        self.data = reduced_data
-        self.label = reduced_train
+        self.data = data_full
+        self.label = label
         self.transform = transform
 
     def __len__(self):
@@ -84,7 +80,7 @@ class BengaliTestDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        image = self.data.iloc[idx][1:].values.reshape(100,100).astype(np.float)
+        image = self.data.iloc[idx][1:].values.reshape(INPUT_SIZE, INPUT_SIZE).astype(np.float)
 
         # if self.transform:
         #     transformed = self.transform(image=img)

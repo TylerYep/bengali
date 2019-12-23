@@ -12,14 +12,14 @@ from dataset import load_data
 from models import ResNet18
 
 
-def validate_model(args, model, criterion, val_loader):
+def validate_model(args, model, criterion, val_loader, epoch, writer):
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
+    acc, loss = 0.0, 0.0
     running_acc, running_loss = 0.0, 0.0
     with torch.no_grad():
-
         with tqdm(desc='Batch', total=len(val_loader), ncols=120, position=1, leave=True) as pbar:
             for i, (data, labels1, labels2, labels3) in enumerate(val_loader):
                 data = data.to(device)
@@ -31,20 +31,33 @@ def validate_model(args, model, criterion, val_loader):
                 loss1 = criterion(outputs1, labels1)
                 loss2 = criterion(outputs2, labels2)
                 loss3 = criterion(outputs3, labels3)
-                running_loss += loss1.item() + loss2.item() + loss3.item()
-                running_acc += (outputs1.argmax(1) == labels1).float().mean()
-                running_acc += (outputs2.argmax(1) == labels2).float().mean()
-                running_acc += (outputs3.argmax(1) == labels3).float().mean()
 
-                # num_steps = epoch * len(train_loader) + i
+                total_loss = loss1.item() + loss2.item() + loss3.item()
+                output1_diff = (outputs1.argmax(1) == labels1).float().mean()
+                output2_diff = (outputs2.argmax(1) == labels2).float().mean()
+                output3_diff = (outputs3.argmax(1) == labels3).float().mean()
 
-                # if i % args.log_interval == 0:
-                #     writer.add_scalar('training loss', running_loss / args.log_interval, num_steps)
-                #     running_loss = 0.0
+                running_loss += total_loss
+                running_acc += output1_diff
+                running_acc += output2_diff
+                running_acc += output3_diff
+
+                loss += total_loss
+                acc += output1_diff
+                acc += output2_diff
+                acc += output3_diff
+
+                num_steps = (epoch-1) * len(val_loader) + i
+
+                if i % args.log_interval == 0:
+                    writer.add_scalar('val loss', loss / args.log_interval, num_steps)
+                    writer.add_scalar('val accuracy', acc / args.log_interval, num_steps)
+                    acc, loss = 0.0, 0.0
 
                 pbar.set_postfix({'Accuracy': f'{running_acc / (len(val_loader)*3):.5f}',
                                 'Loss': running_loss / len(val_loader)})
                 pbar.update()
+                
     return running_loss
 
 
