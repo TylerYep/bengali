@@ -4,7 +4,7 @@ import argparse
 import torch
 import numpy as np
 if torch.cuda.is_available():
-    LOG_PATH = '../gdrive/My Drive/Colab Notebooks/checkpoints'
+    LOG_PATH = '../gdrive/My Drive/Colab Notebooks/cpoints'
 else:
     LOG_PATH = 'checkpoints'
 
