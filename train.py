@@ -57,7 +57,7 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
 
         num_steps = (epoch-1) * len(train_loader) + i
 
-        if i % args.log_interval == 0:
+        if i % args.log_interval == 0 and i != 0:
             writer.add_scalar('training loss', loss / args.log_interval, num_steps)
             writer.add_scalar('training accuracy', acc / args.log_interval, num_steps)
             acc, loss = 0.0, 0.0
@@ -104,7 +104,7 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
 
             num_steps = (epoch-1) * len(val_loader) + i
 
-            if i % args.log_interval == 0:
+            if i % args.log_interval == 0 and i != 0:
                 writer.add_scalar('val loss', loss / args.log_interval, num_steps)
                 writer.add_scalar('val accuracy', acc / args.log_interval, num_steps)
                 acc, loss = 0.0, 0.0
