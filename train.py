@@ -6,6 +6,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 if torch.cuda.is_available():
     from tqdm import tqdm_notebook as tqdm
+    # import sys
+    # sys.path.append('/content/bengali/')
 else:
     from tqdm import tqdm
 
@@ -96,7 +98,7 @@ def main():
     with tqdm(desc='Epoch', total=args.epochs + 1 - start_epoch, ncols=120, position=0, leave=True) as pbar:
         for epoch in range(start_epoch, args.epochs + 1):
             train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
-            val_loss = validate_model(args, model, criterion, val_loader)
+            val_loss = validate_model(args, model, criterion, val_loader, epoch, writer)
 
             is_best = val_loss < best_loss
             best_loss = min(val_loss, best_loss)
