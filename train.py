@@ -15,7 +15,7 @@ from models import ResNet18
 def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
     model.train()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    # model = model.to(device)
     # summary(model, (1, 64, 64))
 
     running_acc, running_loss = 0.0, 0.0
@@ -69,7 +69,7 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
 def validate_model(args, model, criterion, val_loader, epoch, writer):
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    # model = model.to(device)
 
     acc, loss = 0.0, 0.0
     running_acc, running_loss = 0.0, 0.0
@@ -118,6 +118,12 @@ def main():
 
     ###
     model = ResNet18()
+
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+
+
     optimizer = optim.Adam(model.parameters(), lr=2e-5)
     criterion = nn.CrossEntropyLoss()
     ###
