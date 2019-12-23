@@ -4,10 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
-if torch.cuda.is_available():
-    from tqdm import tqdm_notebook as tqdm
-else:
-    from tqdm import tqdm
+# if torch.cuda.is_available():
+#     from tqdm import tqdm_notebook as tqdm
+# else:
+from tqdm import tqdm
 
 import util
 from util import AverageMeter
