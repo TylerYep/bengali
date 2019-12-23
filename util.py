@@ -3,7 +3,10 @@ import shutil
 import argparse
 import torch
 import numpy as np
-
+if torch.cuda.is_available():
+    LOG_PATH = '../gdrive/My Drive/Colab Notebooks/checkpoints'
+else:
+    LOG_PATH = 'checkpoints'
 
 def get_args():
     parser = argparse.ArgumentParser(description='PyTorch Bengali')
@@ -42,7 +45,7 @@ def set_seed():
     torch.backends.cudnn.benchmark = False
 
 
-def get_run_name(save_dir='checkpoints'):
+def get_run_name(save_dir=LOG_PATH):
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     dirlist = sorted([f for f in os.listdir(save_dir) if os.path.isdir(os.path.join(save_dir, f))])
@@ -83,7 +86,7 @@ def load_checkpoint(checkpoint_run, model, optimizer=None):
         model: (torch.nn.Module) model for which the parameters are loaded
         optimizer: (torch.optim) optional: resume optimizer from checkpoint
     """
-    checkpoint = torch.load(os.path.join('checkpoints', checkpoint_run, 'checkpoint.pth.tar'))
+    checkpoint = torch.load(os.path.join(LOG_PATH, checkpoint_run, 'checkpoint.pth.tar'))
     torch.set_rng_state(checkpoint['rng_state'])
     model.load_state_dict(checkpoint['state_dict'])
     if optimizer is not None:

@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-# if torch.cuda.is_available():
-#     from tqdm import tqdm_notebook as tqdm
-# else:
-from tqdm import tqdm
+if torch.cuda.is_available():
+    from tqdm import tqdm_notebook as tqdm
+else:
+    from tqdm import tqdm
 
 import util
 from dataset import load_data

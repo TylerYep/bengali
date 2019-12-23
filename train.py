@@ -4,10 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
-# if torch.cuda.is_available():
-#     from tqdm import tqdm_notebook as tqdm
-# else:
-from tqdm import tqdm
+if torch.cuda.is_available():
+    from tqdm import tqdm_notebook as tqdm
+else:
+    from tqdm import tqdm
 
 import util
 from util import AverageMeter
@@ -79,7 +79,7 @@ def main():
 
     ###
     model = ResNet18()
-    optimizer = optim.Adam(model.parameters(), lr=4e-4)
+    optimizer = optim.Adam(model.parameters(), lr=3e-3)
     criterion = nn.CrossEntropyLoss()
     ###
 
@@ -93,24 +93,24 @@ def main():
     train_loader, val_loader, _ = load_data(args)
 
     best_loss = np.inf
-    with tqdm(desc='Epoch', total=args.epochs + 1 - start_epoch, ncols=120, position=0, leave=True) as pbar:
-        for epoch in range(start_epoch, args.epochs + 1):
-            train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
-            val_loss = validate_model(args, model, criterion, val_loader, epoch, writer)
+    # with tqdm(desc='Epoch', total=args.epochs + 1 - start_epoch, ncols=120, position=0, leave=True) as pbar:
+    for epoch in range(start_epoch, args.epochs + 1):
+        train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
+        val_loss = validate_model(args, model, criterion, val_loader, epoch, writer)
 
-            is_best = val_loss < best_loss
-            best_loss = min(val_loss, best_loss)
+        is_best = val_loss < best_loss
+        best_loss = min(val_loss, best_loss)
 
-            print(f"Saving model at Epoch {epoch}")
-            util.save_checkpoint({
-                'state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'rng_state': torch.get_rng_state(),
-                'run_name': run_name,
-                'epoch': epoch
-            }, run_name, is_best)
+        print(f"Saving model at Epoch {epoch}")
+        util.save_checkpoint({
+            'state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'rng_state': torch.get_rng_state(),
+            'run_name': run_name,
+            'epoch': epoch
+        }, run_name, is_best)
 
-            pbar.update()
+        # pbar.update()
 
 
 if __name__ == '__main__':
