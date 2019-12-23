@@ -16,11 +16,15 @@ def load_data(args):
     # norm = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
     train_set = BengaliDataset(f"{DATA_PATH}/train.csv")
     val_set = BengaliDataset(f"{DATA_PATH}/dev.csv")
-    test_set = BengaliTestDataset(f"{DATA_PATH}/test.csv")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=args.batch_size)
+    return train_loader, val_loader
+
+
+def load_test_data(args):
+    test_set = BengaliTestDataset(f"{DATA_PATH}/test.csv")
     test_loader = DataLoader(test_set, batch_size=args.test_batch_size)
-    return train_loader, val_loader, test_loader
+    return test_loader
 
 
 class BengaliDataset(Dataset):
@@ -36,7 +40,6 @@ class BengaliDataset(Dataset):
         data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
         data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
 
-        #  .apply(lambda x: x.sample(10))
         reduced_index = label.groupby(['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']) \
                              .apply(lambda x: x).image_id.values
         label = label.loc[label.image_id.isin(reduced_index)]
@@ -60,6 +63,7 @@ class BengaliDataset(Dataset):
         label2 = self.label.grapheme_root.values[idx]
         label3 = self.label.consonant_diacritic.values[idx]
         return image, label1, label2, label3
+
 
 class BengaliTestDataset(Dataset):
     """ Dataset for training a model on a dataset. """

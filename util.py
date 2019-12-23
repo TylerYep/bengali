@@ -86,7 +86,8 @@ def load_checkpoint(checkpoint_run, model, optimizer=None):
         model: (torch.nn.Module) model for which the parameters are loaded
         optimizer: (torch.optim) optional: resume optimizer from checkpoint
     """
-    checkpoint = torch.load(os.path.join(LOG_PATH, checkpoint_run, 'checkpoint.pth.tar'))
+    checkpoint = torch.load(os.path.join(LOG_PATH, checkpoint_run, 'model_best.pth.tar'))
+    # map_location=torch.device('cpu'))
     torch.set_rng_state(checkpoint['rng_state'])
     model.load_state_dict(checkpoint['state_dict'])
     if optimizer is not None:

@@ -13,7 +13,6 @@ import util
 from util import AverageMeter
 from dataset import load_data
 from models import ResNet18
-from test import test_model, validate_model
 from viz import visualize
 
 
@@ -73,13 +72,62 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
     return 0
 
 
+def validate_model(args, model, criterion, val_loader, epoch, writer):
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+
+    acc, loss = 0.0, 0.0
+    running_acc, running_loss = 0.0, 0.0
+    with torch.no_grad():
+        with tqdm(desc='Batch', total=len(val_loader), ncols=120, position=1, leave=True) as pbar:
+            for i, (data, labels1, labels2, labels3) in enumerate(val_loader):
+                data = data.to(device)
+                labels1 = labels1.to(device)
+                labels2 = labels2.to(device)
+                labels3 = labels3.to(device)
+
+                outputs1, outputs2, outputs3 = model(data.unsqueeze(1).float())
+                loss1 = criterion(outputs1, labels1)
+                loss2 = criterion(outputs2, labels2)
+                loss3 = criterion(outputs3, labels3)
+
+                total_loss = loss1.item() + loss2.item() + loss3.item()
+                output1_diff = (outputs1.argmax(1) == labels1).float().mean()
+                output2_diff = (outputs2.argmax(1) == labels2).float().mean()
+                output3_diff = (outputs3.argmax(1) == labels3).float().mean()
+
+                running_loss += total_loss
+                running_acc += output1_diff
+                running_acc += output2_diff
+                running_acc += output3_diff
+
+                loss += total_loss
+                acc += output1_diff
+                acc += output2_diff
+                acc += output3_diff
+
+                num_steps = (epoch-1) * len(val_loader) + i
+
+                if i % args.log_interval == 0:
+                    writer.add_scalar('val loss', loss / args.log_interval, num_steps)
+                    writer.add_scalar('val accuracy', acc / args.log_interval, num_steps)
+                    acc, loss = 0.0, 0.0
+
+                pbar.set_postfix({'Accuracy': f'{running_acc / (len(val_loader)*3):.5f}',
+                                'Loss': running_loss / len(val_loader)})
+                pbar.update()
+
+    return running_loss
+
+
 def main():
     args = util.get_args()
     util.set_seed()
 
     ###
     model = ResNet18()
-    optimizer = optim.Adam(model.parameters(), lr=3e-3)
+    optimizer = optim.Adam(model.parameters(), lr=2e-5)
     criterion = nn.CrossEntropyLoss()
     ###
 
@@ -90,11 +138,12 @@ def main():
 
     run_name = util.get_run_name()
     writer = SummaryWriter(run_name)
-    train_loader, val_loader, _ = load_data(args)
+    train_loader, val_loader = load_data(args)
 
     best_loss = np.inf
-    # with tqdm(desc='Epoch', total=args.epochs + 1 - start_epoch, ncols=120, position=0, leave=True) as pbar:
+    scheduler = optim.lr_scheduler.StepLR(optimizer, 2, gamma=0.99)
     for epoch in range(start_epoch, args.epochs + 1):
+        print(f'Epoch [{start_epoch}/{args.epochs}]')
         train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
         val_loss = validate_model(args, model, criterion, val_loader, epoch, writer)
 
@@ -110,7 +159,7 @@ def main():
             'epoch': epoch
         }, run_name, is_best)
 
-        # pbar.update()
+        scheduler.step()
 
 
 if __name__ == '__main__':
