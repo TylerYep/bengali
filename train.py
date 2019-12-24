@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 # from torchsummary import summary
-from tqdm import tqdm
+# from tqdm import tqdm
 
 import util
 # from util import AverageMeter
@@ -20,7 +20,7 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
 
     running_acc, running_loss = 0.0, 0.0
     epoch_acc, epoch_loss = 0.0, 0.0
-    for i, (data, labels1, labels2, labels3) in tqdm(enumerate(train_loader)):
+    for i, (data, labels1, labels2, labels3) in enumerate(train_loader):
         data = data.to(device).unsqueeze(1).float()
         labels1 = labels1.to(device)
         labels2 = labels2.to(device)
@@ -45,7 +45,7 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
         running_acc += output2_diff
         running_acc += output3_diff
 
-        epoch_loss += total_loss * data.size(0)
+        epoch_loss += total_loss * 3 * data.size(0)
         epoch_acc += output1_diff * data.size(0)
         epoch_acc += output2_diff * data.size(0)
         epoch_acc += output3_diff * data.size(0)
@@ -61,7 +61,8 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
             writer.add_scalar('training accuracy', running_acc / args.log_interval, num_steps)
             running_acc, running_loss = 0.0, 0.0
 
-    writer.add_scalar('training epoch loss', epoch_loss / len(train_loader), epoch)
+    print(epoch_loss / (len(train_loader)*3))
+    writer.add_scalar('training epoch loss', epoch_loss / (len(train_loader)*3), epoch)
     writer.add_scalar('training epoch accuracy', epoch_acc / (len(train_loader)*3), epoch)
     return 0
 
@@ -74,7 +75,7 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
     running_acc, running_loss = 0.0, 0.0
     epoch_acc, epoch_loss = 0.0, 0.0
     with torch.no_grad():
-        for i, (data, labels1, labels2, labels3) in tqdm(enumerate(val_loader)):
+        for i, (data, labels1, labels2, labels3) in enumerate(val_loader):
             data = data.to(device)
             labels1 = labels1.to(device)
             labels2 = labels2.to(device)
@@ -90,12 +91,13 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
             output2_diff = (outputs2.argmax(1) == labels2).float().mean()
             output3_diff = (outputs3.argmax(1) == labels3).float().mean()
 
-            epoch_loss += total_loss * data.size(0)
+            epoch_loss += total_loss * 3 * data.size(0)
             epoch_acc += output1_diff * data.size(0) \
                        + output2_diff * data.size(0) \
                        + output3_diff * data.size(0)
 
-    writer.add_scalar('val epoch loss', epoch_loss / len(val_loader), epoch)
+    print(epoch_loss / (len(val_loader)*3))
+    writer.add_scalar('val epoch loss', epoch_loss / (len(val_loader)*3), epoch)
     writer.add_scalar('val epoch accuracy', epoch_acc / (len(val_loader)*3), epoch)
     return epoch_loss
 
