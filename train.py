@@ -94,7 +94,7 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
             epoch_acc += output1_diff + output2_diff + output3_diff
 
     print('val_acc : {:.2f}%'.format(100*epoch_acc/(len(val_loader)*3)))
-    print('va_loss : {:.4f}'.format(epoch_loss/len(val_loader)))
+    print('val_loss : {:.4f}'.format(epoch_loss/len(val_loader)))
     writer.add_scalar('val epoch loss', epoch_loss / len(val_loader), epoch)
     writer.add_scalar('val epoch accuracy', epoch_acc / (len(val_loader)*3), epoch)
     return epoch_loss
@@ -110,7 +110,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    optimizer = optim.Adadelta(model.parameters(), lr=1.0)
+    optimizer = optim.Adam(model.parameters(), lr=3e-3)
     criterion = nn.CrossEntropyLoss()
     ###
 
