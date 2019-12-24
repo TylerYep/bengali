@@ -10,7 +10,7 @@ import util
 # from util import AverageMeter
 from dataset import load_data
 from models import ResNet18
-# from viz import visualize
+from viz import visualize
 
 
 def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
@@ -27,8 +27,8 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
         labels3 = labels3.to(device)
         optimizer.zero_grad()
 
-        # if args.visualize:
-        #     visualize(data, labels1)
+        if args.visualize:
+            visualize(data, labels1)
 
         outputs1, outputs2, outputs3 = model(data)
         loss1 = criterion(outputs1, labels1)
@@ -110,7 +110,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    optimizer = optim.Adam(model.parameters(), lr=3e-1)
+    optimizer = optim.Adam(model.parameters(), lr=3e-4)
     criterion = nn.CrossEntropyLoss()
     ###
 
