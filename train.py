@@ -110,7 +110,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    optimizer = optim.Adam(model.parameters(), lr=3e-3)
+    optimizer = optim.Adam(model.parameters(), lr=3e-1)
     criterion = nn.CrossEntropyLoss()
     ###
 
