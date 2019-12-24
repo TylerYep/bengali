@@ -59,7 +59,8 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
             writer.add_scalar('training accuracy', running_acc / args.log_interval, num_steps)
             running_acc, running_loss = 0.0, 0.0
 
-    print(epoch_loss / len(train_loader))
+    print('train_acc : {:.2f}%'.format(100*epoch_acc/(len(train_loader)*3)))
+    print('train_loss : {:.4f}'.format(epoch_loss/len(train_loader)))
     writer.add_scalar('training epoch loss', epoch_loss / len(train_loader), epoch)
     writer.add_scalar('training epoch accuracy', epoch_acc / (len(train_loader)*3), epoch)
     return 0
@@ -92,7 +93,8 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
             epoch_loss += total_loss
             epoch_acc += output1_diff + output2_diff + output3_diff
 
-    print(epoch_loss / len(val_loader))
+    print('val_acc : {:.2f}%'.format(100*epoch_acc/(len(val_loader)*3)))
+    print('va_loss : {:.4f}'.format(epoch_loss/len(val_loader)))
     writer.add_scalar('val epoch loss', epoch_loss / len(val_loader), epoch)
     writer.add_scalar('val epoch accuracy', epoch_acc / (len(val_loader)*3), epoch)
     return epoch_loss
