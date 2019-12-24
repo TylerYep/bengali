@@ -110,7 +110,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    optimizer = optim.Adam(model.parameters(), lr=2e-5)
+    optimizer = optim.Adadelta(model.parameters(), lr=1.0)
     criterion = nn.CrossEntropyLoss()
     ###
 
@@ -124,7 +124,7 @@ def main():
     train_loader, val_loader = load_data(args)
 
     best_loss = np.inf
-    scheduler = optim.lr_scheduler.StepLR(optimizer, 2, gamma=0.99)
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, 2, gamma=0.99)
     for epoch in range(start_epoch, args.epochs + 1):
         print(f'Epoch [{epoch}/{args.epochs}]')
         train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
@@ -142,7 +142,7 @@ def main():
             'epoch': epoch
         }, run_name, is_best)
 
-        scheduler.step()
+        # scheduler.step()
 
 
 if __name__ == '__main__':
