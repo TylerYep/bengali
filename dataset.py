@@ -34,14 +34,14 @@ class BengaliDataset(Dataset):
         super().__init__()
         col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
         label = pd.read_csv(data_path)
-        data_full = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
-        # data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
-        # data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
-        # data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
-        # data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
+        data0 = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
+        data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
+        data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
+        data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
+        data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
 
         reduced_index = label.groupby(['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']) \
-                             .apply(lambda x: x.sample(1)).image_id.values
+                             .apply(lambda x: x.sample(50)).image_id.values
         label = label.loc[label.image_id.isin(reduced_index)]
         data_full = data_full.loc[data_full.image_id.isin(reduced_index)]
 
