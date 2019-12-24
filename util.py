@@ -26,7 +26,7 @@ def get_args():
     parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
 
-    parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+    parser.add_argument('--log-interval', type=int, default=500, metavar='N',
                         help='how many batches to wait before logging training status')
 
     parser.add_argument('--checkpoint', type=str, default='',
@@ -75,6 +75,7 @@ def save_checkpoint(state, run_name, is_best):
     save_path = os.path.join(run_name, 'checkpoint.pth.tar')
     torch.save(state, save_path)
     if is_best:
+        print('Saving new model_best...')
         shutil.copyfile(save_path, os.path.join(run_name, 'model_best.pth.tar'))
 
 
@@ -87,7 +88,6 @@ def load_checkpoint(checkpoint_run, model, optimizer=None):
         optimizer: (torch.optim) optional: resume optimizer from checkpoint
     """
     checkpoint = torch.load(os.path.join(LOG_PATH, checkpoint_run, 'model_best.pth.tar'))
-    # map_location=torch.device('cpu'))
     torch.set_rng_state(checkpoint['rng_state'])
     model.load_state_dict(checkpoint['state_dict'])
     if optimizer is not None:

@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 # from torchsummary import summary
+from tqdm import tqdm
 
 import util
 # from util import AverageMeter
@@ -15,14 +16,11 @@ from models import ResNet18
 def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
     model.train()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # model = model.to(device)
     # summary(model, (1, 64, 64))
 
     running_acc, running_loss = 0.0, 0.0
-    acc, loss = 0.0, 0.0
-    for i, (data, labels1, labels2, labels3) in enumerate(train_loader):
-        if i % 500 == 0:
-            print(i)
+    epoch_acc, epoch_loss = 0.0, 0.0
+    for i, (data, labels1, labels2, labels3) in tqdm(enumerate(train_loader)):
         data = data.to(device).unsqueeze(1).float()
         labels1 = labels1.to(device)
         labels2 = labels2.to(device)
@@ -47,22 +45,24 @@ def train_model(args, model, criterion, train_loader, optimizer, epoch, writer):
         running_acc += output2_diff
         running_acc += output3_diff
 
-        loss += total_loss
-        acc += output1_diff
-        acc += output2_diff
-        acc += output3_diff
+        epoch_loss += total_loss * data.size(0)
+        epoch_acc += output1_diff * data.size(0)
+        epoch_acc += output2_diff * data.size(0)
+        epoch_acc += output3_diff * data.size(0)
 
         (loss1 + loss2 + loss3).backward()
         optimizer.step()
 
-        num_steps = (epoch-1) * len(train_loader) + i
 
         if i % args.log_interval == 0 and i != 0:
-            writer.add_scalar('training loss', loss / args.log_interval, num_steps)
-            writer.add_scalar('training accuracy', acc / args.log_interval, num_steps)
-            acc, loss = 0.0, 0.0
+            print(i)
+            num_steps = (epoch-1) * len(train_loader) + i
+            writer.add_scalar('training loss', running_loss / args.log_interval, num_steps)
+            writer.add_scalar('training accuracy', running_acc / args.log_interval, num_steps)
+            running_acc, running_loss = 0.0, 0.0
 
-
+    writer.add_scalar('training epoch loss', epoch_loss / len(train_loader), epoch)
+    writer.add_scalar('training epoch accuracy', epoch_acc / (len(train_loader)*3), epoch)
     return 0
 
 
@@ -71,12 +71,10 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # model = model.to(device)
 
-    acc, loss = 0.0, 0.0
     running_acc, running_loss = 0.0, 0.0
+    epoch_acc, epoch_loss = 0.0, 0.0
     with torch.no_grad():
-        for i, (data, labels1, labels2, labels3) in enumerate(val_loader):
-            if i % 500 == 0:
-                print(i)
+        for i, (data, labels1, labels2, labels3) in tqdm(enumerate(val_loader)):
             data = data.to(device)
             labels1 = labels1.to(device)
             labels2 = labels2.to(device)
@@ -92,24 +90,14 @@ def validate_model(args, model, criterion, val_loader, epoch, writer):
             output2_diff = (outputs2.argmax(1) == labels2).float().mean()
             output3_diff = (outputs3.argmax(1) == labels3).float().mean()
 
-            running_loss += total_loss
-            running_acc += output1_diff
-            running_acc += output2_diff
-            running_acc += output3_diff
+            epoch_loss += total_loss * data.size(0)
+            epoch_acc += output1_diff * data.size(0) \
+                       + output2_diff * data.size(0) \
+                       + output3_diff * data.size(0)
 
-            loss += total_loss
-            acc += output1_diff
-            acc += output2_diff
-            acc += output3_diff
-
-            num_steps = (epoch-1) * len(val_loader) + i
-
-            if i % args.log_interval == 0 and i != 0:
-                writer.add_scalar('val loss', loss / args.log_interval, num_steps)
-                writer.add_scalar('val accuracy', acc / args.log_interval, num_steps)
-                acc, loss = 0.0, 0.0
-
-    return running_loss
+    writer.add_scalar('val epoch loss', epoch_loss / len(val_loader), epoch)
+    writer.add_scalar('val epoch accuracy', epoch_acc / (len(val_loader)*3), epoch)
+    return epoch_loss
 
 
 def main():
@@ -119,10 +107,8 @@ def main():
     ###
     model = ResNet18()
 
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-
 
     optimizer = optim.Adam(model.parameters(), lr=2e-5)
     criterion = nn.CrossEntropyLoss()
@@ -140,7 +126,7 @@ def main():
     best_loss = np.inf
     scheduler = optim.lr_scheduler.StepLR(optimizer, 2, gamma=0.99)
     for epoch in range(start_epoch, args.epochs + 1):
-        print(f'Epoch [{start_epoch}/{args.epochs}]')
+        print(f'Epoch [{epoch}/{args.epochs}]')
         train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
         val_loss = validate_model(args, model, criterion, val_loader, epoch, writer)
 

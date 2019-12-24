@@ -34,11 +34,11 @@ class BengaliDataset(Dataset):
         super().__init__()
         col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
         label = pd.read_csv(data_path)
-        data0 = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
-        data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
-        data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
-        data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
-        data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
+        data_full = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
+        # data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
+        # data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
+        # data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
+        # data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
 
         reduced_index = label.groupby(['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']) \
                              .apply(lambda x: x).image_id.values
@@ -72,10 +72,10 @@ class BengaliTestDataset(Dataset):
         super().__init__()
 
         test = pd.read_csv(data_path)
-        data0 = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
-        data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
-        data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
-        data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
+        data0 = pd.read_feather(f'{DATA_PATH}/test_data_0.feather')
+        data1 = pd.read_feather(f'{DATA_PATH}/test_data_1.feather')
+        data2 = pd.read_feather(f'{DATA_PATH}/test_data_2.feather')
+        data3 = pd.read_feather(f'{DATA_PATH}/test_data_3.feather')
         data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
         self.data = data_full
         self.transform = transform
