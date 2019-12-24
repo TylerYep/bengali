@@ -121,12 +121,12 @@ def main():
 
     run_name = util.get_run_name()
     writer = SummaryWriter(run_name)
-    train_loader, val_loader = load_data(args)
 
     best_loss = np.inf
     # scheduler = optim.lr_scheduler.StepLR(optimizer, 2, gamma=0.99)
     for epoch in range(start_epoch, args.epochs + 1):
         print(f'Epoch [{epoch}/{args.epochs}]')
+        train_loader, val_loader = load_data(args)
         train_loss = train_model(args, model, criterion, train_loader, optimizer, epoch, writer)
         val_loss = validate_model(args, model, criterion, val_loader, epoch, writer)
 
