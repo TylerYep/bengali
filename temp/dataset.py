@@ -1,21 +1,18 @@
-from typing import Tuple
-from argparse import Namespace
-import pandas as pd
-import numpy as np
 import torch
+import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset
 from torchvision import datasets, transforms
+import pandas as pd
 if torch.cuda.is_available():
     DATA_PATH = '../gdrive/My Drive/Colab Notebooks/data'
 else:
     DATA_PATH = 'data'
 
-INPUT_SHAPE = (1, 64, 64)
 INPUT_SIZE = 64
 
 
-def load_train_data(args):
+def load_data(args):
     # norm = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
     train_set = BengaliDataset(f"{DATA_PATH}/train.csv")
     val_set = BengaliDataset(f"{DATA_PATH}/dev.csv")
@@ -35,21 +32,21 @@ class BengaliDataset(Dataset):
 
     def __init__(self, data_path, transform=None):
         super().__init__()
-        # col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
+        col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
         label = pd.read_csv(data_path)
         data0 = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
-        # data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
-        # data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
-        # data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
-        data_full = pd.concat([data0], ignore_index=True)
+        data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
+        data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
+        data3 = pd.read_feather(f'{DATA_PATH}/train_data_3.feather')
+        data_full = pd.concat([data0,data1,data2,data3], ignore_index=True)
 
         reduced_index = label.groupby(['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']) \
                              .apply(lambda x: x.sample(5)).image_id.values
-        reduced_train = label.loc[label.image_id.isin(reduced_index)]
-        reduced_data = data_full.loc[data_full.image_id.isin(reduced_index)]
+        label = label.loc[label.image_id.isin(reduced_index)]
+        data_full = data_full.loc[data_full.image_id.isin(reduced_index)]
 
-        self.data = reduced_data
-        self.label = reduced_train
+        self.data = data_full
+        self.label = label
         self.transform = transform
 
     def __len__(self):

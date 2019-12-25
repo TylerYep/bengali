@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-class ResNet34(nn.Module):
+
+class ResNet18(nn.Module):
     def __init__(self):
-        super(ResNet34,self).__init__()
+        super(ResNet18,self).__init__()
 
         self.block1 = nn.Sequential(
             nn.Conv2d(1,64,kernel_size=2,stride=2,padding=3,bias=False),

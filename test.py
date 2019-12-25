@@ -1,50 +1,48 @@
-import numpy as np
-import pandas as pd
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-# if torch.cuda.is_available():
-#     from tqdm import tqdm_notebook as tqdm
-# else:
-from tqdm import tqdm
 
+from args import init_pipeline
 import util
 from dataset import load_test_data
-from models import ResNet18
+from models import BasicCNN as Model
+
+if torch.cuda.is_available():
+    from tqdm import tqdm_notebook as tqdm
+else:
+    from tqdm import tqdm
 
 
-def test_model(args, model, criterion, test_loader):
+def test_model(test_loader, model, device, criterion):
     model.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-
-    predictions = []
+    test_loss, correct = 0, 0
     with torch.no_grad():
-        with tqdm(desc='Batch', total=len(test_loader), ncols=120, position=0, leave=True) as pbar:
-            for i, data in enumerate(test_loader):
-                data = data.to(device)
-                outputs1, outputs2, outputs3 = model(data.unsqueeze(1).float())
-                predictions.append(outputs3.argmax(1).cpu().detach().numpy())
-                predictions.append(outputs2.argmax(1).cpu().detach().numpy())
-                predictions.append(outputs1.argmax(1).cpu().detach().numpy())
+        with tqdm(desc='Test Batch', total=len(test_loader), ncols=120) as pbar:
+            for data, target in test_loader:
+                data, target = data.to(device), target.to(device)
+                output = model(data)
+                test_loss += criterion(output, target, reduction='sum').item()
+                pred = output.argmax(dim=1, keepdim=True)
+                correct += pred.eq(target.view_as(pred)).sum().item()
                 pbar.update()
-    submission = pd.read_csv("data/sample_submission.csv")
-    submission.target = np.hstack(predictions)
 
-    return 0
+    test_loss /= len(test_loader.dataset)
+
+    print(f'\nTest set: Average loss: {test_loss:.4f},',
+          f'Accuracy: {correct}/{len(test_loader.dataset)}',
+          f'({100. * correct / len(test_loader.dataset):.0f}%)\n')
+    return test_loss
 
 
 def main():
-    args = util.get_args()
-    util.set_seed()
+    args, device = init_pipeline()
 
-    test_loader = load_test_data(args)
-    model = ResNet18()
+    criterion = F.nll_loss
+    model = Model().to(device)
     if args.checkpoint != '':
         util.load_checkpoint(args.checkpoint, model)
 
-    criterion = nn.CrossEntropyLoss()
-    test_model(args, model, criterion, test_loader)
+    test_loader = load_test_data(args)
+    test_model(test_loader, model, device, criterion)
 
 
 if __name__ == '__main__':
