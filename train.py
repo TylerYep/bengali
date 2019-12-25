@@ -66,12 +66,12 @@ def main():
     for epoch in range(start_epoch, args.epochs + 1):
         print(f'Epoch [{epoch}/{args.epochs}]')
         metrics.set_epoch(epoch)
-        train_loader, val_loader = load_train_data(args)
+        train_loader = load_train_data(args)
         train_loss = train_and_validate(train_loader, metrics, Mode.TRAIN)
-        val_loss = train_and_validate(val_loader, metrics, Mode.VAL)
+        # val_loss = train_and_validate(val_loader, metrics, Mode.VAL)
 
-        is_best = val_loss < best_loss
-        best_loss = min(val_loss, best_loss)
+        is_best = True # val_loss < best_loss
+        # best_loss = min(val_loss, best_loss)
         util.save_checkpoint({
             'state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),

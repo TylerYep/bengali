@@ -17,11 +17,11 @@ INPUT_SIZE = 64
 
 def load_train_data(args):
     # norm = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-    train_set = BengaliDataset(f"{DATA_PATH}/train-orig.csv")
-    val_set = BengaliDataset(f"{DATA_PATH}/test.csv")
+    train_set = BengaliDataset(f"{DATA_PATH}/train.csv")
+    # val_set = BengaliDataset(f"{DATA_PATH}/train.csv")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size=args.batch_size)
-    return train_loader, val_loader
+    # val_loader = DataLoader(val_set, batch_size=args.batch_size)
+    return train_loader#, val_loader
 
 
 def load_test_data(args):
