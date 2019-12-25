@@ -39,33 +39,30 @@ def main():
             torch.set_grad_enabled(False)
 
         metrics.set_num_examples(len(loader))
-        with tqdm(desc='', total=len(loader), ncols=120) as pbar:
-            for i, (data, labels1, labels2, labels3) in enumerate(loader):
-                data = data.to(device)
-                labels1 = labels1.to(device)
-                labels2 = labels2.to(device)
-                labels3 = labels3.to(device)
+        # with tqdm(desc='', total=len(loader), ncols=120) as pbar:
+        for i, (data, labels1, labels2, labels3) in enumerate(loader):
+            data = data.to(device)
+            labels1 = labels1.to(device)
+            labels2 = labels2.to(device)
+            labels3 = labels3.to(device)
 
-                if mode == Mode.TRAIN:
-                    optimizer.zero_grad()
+            if mode == Mode.TRAIN:
+                optimizer.zero_grad()
 
-                if i == 0 and metrics.epoch == 1:
-                    visualize(data, labels1, run_name)
+            outputs1, outputs2, outputs3 = model(data.unsqueeze(1).float())
+            loss1 = criterion(outputs1, labels1)
+            loss2 = criterion(outputs2, labels2)
+            loss3 = criterion(outputs3, labels3)
 
-                outputs1, outputs2, outputs3 = model(data.unsqueeze(1).float())
-                loss1 = criterion(outputs1, labels1)
-                loss2 = criterion(outputs2, labels2)
-                loss3 = criterion(outputs3, labels3)
+            total_loss = loss1.item() + loss2.item() + loss3.item()
 
-                total_loss = loss1.item() + loss2.item() + loss3.item()
+            if mode == Mode.TRAIN:
+                (loss1 + loss2 + loss3).backward()
+                optimizer.step()
 
-                if mode == Mode.TRAIN:
-                    (loss1 + loss2 + loss3).backward()
-                    optimizer.step()
-
-                update_metrics(metrics, pbar, i, total_loss,
-                                [outputs1, outputs2, outputs3],
-                                [labels1, labels2, labels3], mode)
+            update_metrics(metrics, i, total_loss,
+                            [outputs1, outputs2, outputs3],
+                            [labels1, labels2, labels3], mode)
         return get_results(metrics, mode)
 
     metric_names = ('epoch_loss', 'running_loss', 'epoch_acc', 'running_acc')
@@ -90,7 +87,7 @@ def main():
         }, run_name, is_best)
 
 
-def update_metrics(metrics, pbar, i, loss, output, target, mode) -> None:
+def update_metrics(metrics, i, loss, output, target, mode) -> None:
     outputs1, outputs2, outputs3 = output
     labels1, labels2, labels3 = target
     accuracy = (outputs1.argmax(1) == labels1).float().mean() \
@@ -102,13 +99,14 @@ def update_metrics(metrics, pbar, i, loss, output, target, mode) -> None:
     metrics.update('running_acc', accuracy.item())
 
     if i % metrics.log_interval == 0:
+        print(i)
         num_steps = (metrics.epoch-1) * metrics.num_examples + i
         metrics.write(f'{mode} Loss', metrics.running_loss / metrics.log_interval, num_steps)
         metrics.write(f'{mode} Accuracy', metrics.running_acc / metrics.log_interval, num_steps)
         metrics.reset(['running_loss', 'running_acc'])
 
-    pbar.set_postfix({'Loss': f'{loss:.5f}', 'Accuracy': accuracy.item()})
-    pbar.update()
+    # pbar.set_postfix({'Loss': f'{loss:.5f}', 'Accuracy': accuracy.item()})
+    # pbar.update()
 
 
 def get_results(metrics, mode) -> float:
