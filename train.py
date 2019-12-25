@@ -92,12 +92,12 @@ def update_metrics(metrics, i, loss, output, target, mode) -> None:
     metrics.update('epoch_acc', accuracy.item())
     metrics.update('running_acc', accuracy.item())
 
-    if i % metrics.log_interval == 0:
-        if i != 0: print(i)
-        num_steps = (metrics.epoch-1) * metrics.num_examples + i
-        metrics.write(f'{mode} Loss', metrics.running_loss / metrics.log_interval, num_steps)
-        metrics.write(f'{mode} Accuracy', metrics.running_acc / metrics.log_interval, num_steps)
-        metrics.reset(['running_loss', 'running_acc'])
+    # if i % metrics.log_interval == 0:
+    #     if i != 0: print(i)
+    #     num_steps = (metrics.epoch-1) * metrics.num_examples + i
+    #     metrics.write(f'{mode} Loss', metrics.running_loss / metrics.log_interval, num_steps)
+    #     metrics.write(f'{mode} Accuracy', metrics.running_acc / metrics.log_interval, num_steps)
+    #     metrics.reset(['running_loss', 'running_acc'])
 
 
 def get_results(metrics, mode) -> float:
