@@ -13,14 +13,15 @@ from tqdm import tqdm
 
 INPUT_SIZE = 64
 DATA_PATH = '/kaggle/input/bengaliai-cv19'
-CP_PATH = ''
+CP_PATH = 'checkpoints/J'
 
 
 def resize(df):
     resized = {}
     df = df.set_index('image_id')
     for i in tqdm(range(df.shape[0])):
-        image = cv2.resize(df.loc[df.index[i]].values.reshape(137,236),(INPUT_SIZE,INPUT_SIZE))
+        # image = cv2.resize(df.loc[df.index[i]].values.reshape(137,236),(INPUT_SIZE,INPUT_SIZE))
+        image = cv2.resize(df.loc[df.index[i]].values,(INPUT_SIZE,INPUT_SIZE))
         resized[df.index[i]] = image.reshape(-1)
     resized = pd.DataFrame(resized).T.reset_index()
     resized.columns = resized.columns.astype(str)
@@ -128,7 +129,9 @@ def test_model(model, criterion):
 
     predictions = []
     for i in range(4):
-        data = pd.read_parquet(f'/kaggle/input/bengaliai-cv19/test_image_data_{i}.parquet')
+        # data = pd.read_parquet(f'/kaggle/input/bengaliai-cv19/test_image_data_{i}.parquet')
+        data = pd.read_feather(f'data/test_data_{i}.feather')
+
         data = resize(data)
         test_set = BengaliTestDataset(data)
         test_loader = DataLoader(test_set, batch_size=1000)
@@ -142,7 +145,7 @@ def test_model(model, criterion):
                     predictions.append(outputs2.argmax(1).cpu().detach().numpy())
                     predictions.append(outputs1.argmax(1).cpu().detach().numpy())
                     pbar.update()
-    submission = pd.read_csv(f"{DATA_PATH}/sample_submission.csv")
+    submission = pd.read_csv(f"data/sample_submission.csv")
     submission.target = np.hstack(predictions)
     submission.to_csv('submission.csv',index=False)
 
@@ -172,7 +175,7 @@ def load_checkpoint(checkpoint_run, model, optimizer=None):
         model: (torch.nn.Module) model for which the parameters are loaded
         optimizer: (torch.optim) optional: resume optimizer from checkpoint
     """
-    checkpoint = torch.load(os.path.join(CP_PATH, checkpoint_run, 'model_best.pth.tar'))
+    checkpoint = torch.load(os.path.join(CP_PATH, 'model_best.pth.tar'))
     # map_location=torch.device('cpu'))
     torch.set_rng_state(checkpoint['rng_state'])
     model.load_state_dict(checkpoint['state_dict'])

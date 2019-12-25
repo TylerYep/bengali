@@ -13,11 +13,6 @@ from dataset import load_train_data, INPUT_SHAPE
 from models import ResNet34 as Model
 from viz import visualize
 
-if torch.cuda.is_available():
-    from tqdm import tqdm_notebook as tqdm
-else:
-    from tqdm import tqdm
-
 
 def main():
     args, device = init_pipeline()
@@ -39,7 +34,6 @@ def main():
             torch.set_grad_enabled(False)
 
         metrics.set_num_examples(len(loader))
-        # with tqdm(desc='', total=len(loader), ncols=120) as pbar:
         for i, (data, labels1, labels2, labels3) in enumerate(loader):
             data = data.to(device)
             labels1 = labels1.to(device)
@@ -99,14 +93,11 @@ def update_metrics(metrics, i, loss, output, target, mode) -> None:
     metrics.update('running_acc', accuracy.item())
 
     if i % metrics.log_interval == 0:
-        print(i)
+        if i != 0: print(i)
         num_steps = (metrics.epoch-1) * metrics.num_examples + i
         metrics.write(f'{mode} Loss', metrics.running_loss / metrics.log_interval, num_steps)
         metrics.write(f'{mode} Accuracy', metrics.running_acc / metrics.log_interval, num_steps)
         metrics.reset(['running_loss', 'running_acc'])
-
-    # pbar.set_postfix({'Loss': f'{loss:.5f}', 'Accuracy': accuracy.item()})
-    # pbar.update()
 
 
 def get_results(metrics, mode) -> float:

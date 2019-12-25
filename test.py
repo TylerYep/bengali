@@ -6,11 +6,6 @@ import util
 from dataset import load_test_data
 from models import BasicCNN as Model
 
-if torch.cuda.is_available():
-    from tqdm import tqdm_notebook as tqdm
-else:
-    from tqdm import tqdm
-
 
 def test_model(test_loader, model, device, criterion):
     model.eval()
