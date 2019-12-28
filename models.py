@@ -4,7 +4,7 @@ from torch.nn import functional as F
 
 class ResNet34(nn.Module):
     def __init__(self):
-        super(ResNet34,self).__init__()
+        super().__init__()
 
         self.block1 = nn.Sequential(
             nn.Conv2d(1,64,kernel_size=2,stride=2,padding=3,bias=False),
@@ -40,7 +40,7 @@ class ResNet34(nn.Module):
         # consonant_diacritic
         self.fc3 = nn.Linear(512,7)
 
-    def forward(self,x):
+    def forward(self, x):
         x = self.block1(x)
         x = self.block2(x)
         x = self.block3(x)
@@ -53,6 +53,19 @@ class ResNet34(nn.Module):
         x3 = self.fc3(x)
         return x1,x2,x3
 
+
+    def forward_with_activations(self, x):
+        l1 = self.block1(x)
+        l2 = self.block2(l1)
+        l3 = self.block3(l2)
+        l4 = self.block4(l3)
+        l5 = self.block5(l4)
+        x = self.avgpool(l5)
+        x = x.view(x.size(0),-1)
+        x1 = self.fc1(x)
+        x2 = self.fc2(x)
+        x3 = self.fc3(x)
+        return x1,x2,x3, [l1, l2, l3, l4, l5]
 
 class ResidualBlock(nn.Module):
     def __init__(self,in_channels,out_channels,stride=1,kernel_size=3,padding=1,bias=False):
