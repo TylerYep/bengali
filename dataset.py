@@ -16,9 +16,8 @@ INPUT_SIZE = 64
 
 
 def load_train_data(args):
-    # norm = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-    train_set = BengaliDataset(f"{DATA_PATH}/train-orig.csv")
-    # val_set = BengaliDataset(f"{DATA_PATH}/train.csv")
+    train_set = BengaliDataset()
+    # val_set = BengaliDataset()
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
     # val_loader = DataLoader(val_set, batch_size=args.batch_size)
     return train_loader#, val_loader
@@ -33,10 +32,10 @@ def load_test_data(args):
 class BengaliDataset(Dataset):
     """ Dataset for training a model on a dataset. """
 
-    def __init__(self, data_path, transform=None):
+    def __init__(self):
         super().__init__()
         # col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
-        label = pd.read_csv(data_path)
+        label = pd.read_csv(f"{DATA_PATH}/train-orig.csv")
         data0 = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
         # data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
         # data2 = pd.read_feather(f'{DATA_PATH}/train_data_2.feather')
@@ -51,7 +50,6 @@ class BengaliDataset(Dataset):
 
         self.data = reduced_data
         self.label = reduced_train
-        self.transform = transform
 
     def __len__(self):
         return len(self.data)

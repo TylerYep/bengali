@@ -1,15 +1,13 @@
 from typing import Dict, Any
-from enum import Enum, unique
 from argparse import Namespace
 import os
 import shutil
+import random
+import numpy as np
 import torch
 import torch.nn as nn
 
-if torch.cuda.is_available():
-    SAVE_DIR = '../gdrive/My Drive/Colab Notebooks/cpoints'
-else:
-    SAVE_DIR = 'checkpoints'
+SAVE_DIR = 'checkpoints'
 
 
 def get_run_name(args: Namespace, save_dir: str = SAVE_DIR) -> str:
@@ -21,7 +19,7 @@ def get_run_name(args: Namespace, save_dir: str = SAVE_DIR) -> str:
         dirlist = [f for f in os.listdir(save_dir) if os.path.isdir(os.path.join(save_dir, f))]
         dirlist.sort()
         dirlist.sort(key=lambda k: (len(k), k))  # Sort alphabetically but by length
-        if len(dirlist) == 0:
+        if not dirlist:
             result = 'A'
         else:
             last_run_char = dirlist[-1][-1]
@@ -34,8 +32,15 @@ def get_run_name(args: Namespace, save_dir: str = SAVE_DIR) -> str:
     return out_dir
 
 
+def set_rng_state(checkpoint):
+    if checkpoint:
+        random.setstate(checkpoint['rng_state'])
+        np.random.set_state(checkpoint['np_rng_state'])
+        torch.set_rng_state(checkpoint['torch_rng_state'])
+
+
 def save_checkpoint(state: Dict[str, Any], run_name: str, is_best: bool) -> None:
-    """Saves model and training parameters at checkpoint + 'last.pth.tar'.
+    """ Saves model and training parameters at checkpoint + 'last.pth.tar'.
     If is_best is True, also saves best.pth.tar
     Args:
         state: (dict) contains model's state_dict, may contain other keys such as
@@ -51,76 +56,26 @@ def save_checkpoint(state: Dict[str, Any], run_name: str, is_best: bool) -> None
         shutil.copyfile(save_path, os.path.join(run_name, 'model_best.pth.tar'))
 
 
-def load_checkpoint(checkpoint_run: str, model: nn.Module, optimizer=None) -> Dict[str, Any]:
-    """ Loads model parameters (state_dict) from file_path. If optimizer is provided,
-    loads state_dict of optimizer assuming it is present in checkpoint.
+def load_checkpoint(checkpoint_name: str) -> Dict[str, Any]:
+    """ Loads torch checkpoint.
     Args:
         checkpoint: (string) filename which needs to be loaded
+    """
+    if not checkpoint_name:
+        return {}
+    print('Loading checkpoint...')
+    return torch.load(os.path.join(SAVE_DIR, checkpoint_name, 'checkpoint.pth.tar'))
+
+
+def load_state_dict(checkpoint: Dict, model: nn.Module, optimizer=None):
+    """ Loads model parameters (state_dict) from checkpoint. If optimizer is provided,
+    loads state_dict of optimizer assuming it is present in checkpoint.
+    Args:
+        checkpoint: () checkpoint object
         model: (torch.nn.Module) model for which the parameters are loaded
         optimizer: (torch.optim) optional: resume optimizer from checkpoint
     """
-    if not checkpoint_run:
-        return {}
-    print('Loading checkpoint...')
-    checkpoint = torch.load(os.path.join(SAVE_DIR, checkpoint_run, 'checkpoint.pth.tar'))
-    torch.set_rng_state(checkpoint['rng_state'])
-    model.load_state_dict(checkpoint['state_dict'])
-    if optimizer is not None:
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    return checkpoint
-
-
-@unique
-class Mode(Enum):
-    TRAIN = 'Train'
-    VAL = 'Val'
-
-
-class Metrics:
-    def __init__(self, writer, metric_names, log_interval=10):
-        self.writer = writer
-        self.epoch = 1
-        self.metric_names = metric_names
-        self.metric_data = {name: 0.0 for name in metric_names}
-        self.log_interval = log_interval
-        self.num_examples = 0
-
-    def __getattr__(self, name) -> float:
-        return self.metric_data[name]
-
-    def set_epoch(self, new_epoch):
-        self.epoch = new_epoch
-
-    def reset(self, metric_names=None):
-        if metric_names is None:
-            metric_names = self.metric_names
-
-        for name in metric_names:
-            self.metric_data[name] = 0.0
-
-    def update(self, name, val, n=1):
-        self.metric_data[name] += val * n
-
-    def write(self, title, val, step_num):
-        self.writer.add_scalar(title, val, step_num)
-
-    def set_num_examples(self, num_examples):
-        self.num_examples = num_examples
-
-
-# class AverageMeter():
-#     """Computes and stores the average and current value"""
-#     def __init__(self):
-#         self.reset()
-
-#     def reset(self):
-#         self.val = 0
-#         self.avg = 0
-#         self.sum = 0
-#         self.count = 0
-
-#     def update(self, val, n=1):
-#         self.val = val
-#         self.sum += val * n
-#         self.count += n
-#         self.avg = self.sum / self.count
+    if checkpoint:
+        model.load_state_dict(checkpoint['state_dict'])
+        if optimizer is not None:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
