@@ -20,7 +20,7 @@ def load_train_data(args):
     # val_set = BengaliDataset()
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
     # val_loader = DataLoader(val_set, batch_size=args.batch_size)
-    return train_loader#, val_loader
+    return train_loader, None, {} #, val_loader
 
 
 def load_test_data(args):
@@ -34,7 +34,7 @@ class BengaliDataset(Dataset):
 
     def __init__(self):
         super().__init__()
-        # col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
+        col_names = ['image_id', 'grapheme_root', 'vowel_diacritic', 'consonant_diacritic', 'grapheme']
         label = pd.read_csv(f"{DATA_PATH}/train-orig.csv")
         data0 = pd.read_feather(f'{DATA_PATH}/train_data_0.feather')
         # data1 = pd.read_feather(f'{DATA_PATH}/train_data_1.feather')
@@ -46,7 +46,7 @@ class BengaliDataset(Dataset):
                              .apply(lambda x: x.sample(5)).image_id.values
         reduced_train = label.loc[label.image_id.isin(reduced_index)]
         reduced_data = data_full.loc[data_full.image_id.isin(reduced_index)]
-        self.data = self.data.iloc[:, 1:].values
+        # self.data = self.data.iloc[:, 1:].values
 
         self.data = reduced_data
         self.label = reduced_train
@@ -67,7 +67,6 @@ class BengaliTestDataset(Dataset):
 
     def __init__(self, data_path, transform=None):
         super().__init__()
-
         test = pd.read_csv(data_path)
         data0 = pd.read_feather(f'{DATA_PATH}/test_data_0.feather')
         data1 = pd.read_feather(f'{DATA_PATH}/test_data_1.feather')
